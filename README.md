@@ -1,5 +1,5 @@
 # RRT-Path-Finder
-=================
+
 Modules loaded for Rapidly Exploring Random Tress Algorithm
 
 An RRT grows a tree rooted at the starting configuration by using random samples from the search space. As each sample is drawn, a connection is attempted between it and the nearest state in the tree. If the connection is feasible (passes entirely through free space and obeys any constraints), this results in the addition of the new state to the tree.
