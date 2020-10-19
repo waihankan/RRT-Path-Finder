@@ -1,35 +1,44 @@
-clc; clear;  % Clear the command window and the workspace first.\
+clc; clear;
 
 % Import data and Initialization
-% Most of the Initialization are optimized for the fastest performance. The
-% default settings are suggested.
-obstacles = readmatrix('D:\Matlab 2020\Peer Assignments\Mine\Course4_Week2\RRT-Path-Finder\result\obstacles.csv');
+
+obstacles = readmatrix('obstacles.csv');
+obstacles(:, 3) = obstacles(:, 3)/2; % diameter to radius.
 start = [-0.5, -0.5];
-goal =[0.5, 0.5]; % The start and goal configuration can be changed according
-                                     % to user preference.
-isFound = 0; % the boolean to state if the path is found before maximum iterations.
-goal_area = 0.2; % The goal area determines the goal region for fast and better performance.
-goal_area(goal_area > 0.2) = 0.2;
-itr = 300; % The itr is the maximum iterration for finding the path.
-max_dist = 0.09; % Max_dist is the maximum distance from the nearest node to the new configuration node.
-max_dist(max_dist > 0.09) = 0.09; % Limit the max_dist to 0.1.
+goal =[0.5, 0.5];
+isFound = 0; 
+goal_area = 0.25; % bias the goal.
+
+itr = 100;
+max_dist = 0.2;
 edges = zeros(itr, 3);
 rand_node =[];
 nodes = [1, start(1), start(2), euclidean_dist(start, goal)];
-figure;
+
+% For figure
+
+f1 = figure;
 axis equal;
+set(gca,'XTick', -0.5 : 0.1 : 0.5);
+set(gca,'YTick', -0.5 : 0.1 : 0.5);
+xlim([-0.5 0.5]);
+ylim([-0.5 0.5]);
 
 % RRT Alogorithm
 
 for current = 2 : itr + 1
     rand_node = [];
+    
     while isempty(rand_node)
-        rand_node = rand_conf(obstacles, current);     % find the obstacle free rand_node.
-        nearest_node = local_planner(nodes, rand_node);  % find the nearest node in the 'nodes' matrix.
-        new_node = new_conf(rand_node, nearest_node, max_dist, current); %place a new node at the max_dist in the rand_node direction
+        rand_node = rand_conf(obstacles, current);     
+        nearest_node = local_planner(nodes, rand_node); 
+        new_node = new_conf(rand_node, nearest_node, max_dist, current);
         
-        if checkcollision_point(obstacles, new_node) % check the collision for new_node
-            rand_node =[];
+        %check the new node for collision.
+        if checkcollision_point(obstacles, new_node) || ...
+           isCollision(new_node, nearest_node, obstacles)
+            rand_node =[];  
+            
         else                          
             nodes(current,:) = [new_node, euclidean_dist(new_node, goal)];
             edges(current,:) = [new_node(1), nearest_node(1), euclidean_dist(nearest_node, new_node)];
@@ -46,12 +55,13 @@ for current = 2 : itr + 1
             end
         end
     end
+    
     if isFound
         break;
     end
 end
 
-%Post algorithm (for data cleaning and visual experiece)
+%Post algorithm (reconnect and visual experiece)
 
 nodes(end+1, :)= [nodes(end, 1) + 1, goal, euclidean_dist(goal, goal)];
 nearest_node = local_planner(nodes(2:end, :), nodes(1, :));
@@ -61,12 +71,18 @@ nearest_node = local_planner(nodes(1 : end-1, :), nodes(end, :));
 edges(current + 1, :) = [nodes(end, 1), nearest_node(1), euclidean_dist(nearest_node, nodes(end, :))];
 edges = edges(any(edges, 2), :);
 
-if checkcollision_edge(nodes(end, :), nearest_node, obstacles)
-    % checks the collision between the nearest_node possible and the goal:
-    % if iscollide then path == fail else path = construct_path.
-    disp("fatal: The path is not found, suggest you to add more iterations");
+if isCollision(nodes(end, :), nearest_node, obstacles)
+    % check collision from goal to nearest node.
+    close(f1);
+    error("fatal: The path is not found, add more iterations or increase the distance from node to node.");
 end
+
+% path reconstruction and calculate cost.
 path = construct_path(edges);
+path_cost = findCost(path, edges);
+fprintf("Success. \n");
+fprintf("Total cost to reach goal : %.4f \n", path_cost);
+
 hold on;
 plot(nearest_node(2), nearest_node(3), 'o', 'MarkerEdgeColor', 'b', 'MarkerFaceColor', 'b');
 plot(nodes(end, 2), nodes(end, 3), 'o', 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r'); 
