@@ -5,13 +5,11 @@ function path = construct_path(edges)
     parent = zeros(1,size(edges,1));
     i =2;
     
-    while current ~= start
-        
+    while current ~= start        
         [r,c] = find(edges(:,1) == current);
         parent(1,i) = edges(r,c+1);
         current = parent(1,i);
-        i = i +1;
-        
+        i = i +1;        
     end
     
     parent(1,1) = edges(end,1);
