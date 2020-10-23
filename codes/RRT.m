@@ -10,7 +10,7 @@ isFound = 0;
 goal_area = 0.25; % bias the goal.
 
 itr = 100;
-max_dist = 0.18;
+max_dist = 0.25;
 edges = zeros(itr, 3);
 rand_node =[];
 nodes = [1, start(1), start(2), euclidean_dist(start, goal)];
